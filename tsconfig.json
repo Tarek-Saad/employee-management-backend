@@ -1,0 +1,81 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "ES2020",
+    "lib": ["ES2020"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+
+    /* Emit */
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "declaration": false,
+    "declarationMap": false,
+
+    /* Interop Constraints */
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Type Checking */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+
+    /* Completeness */
+    "skipLibCheck": true,
+
+    /* Additional */
+    "resolveJsonModule": true,
+    "allowJs": false,
+    "checkJs": false,
+    "incremental": true,
+    "composite": false,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+
+    /* Path Mapping */
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@/lib/*": ["lib/*"],
+      "@/types/*": ["types/*"],
+      "@/services/*": ["services/*"],
+      "@/routes/*": ["routes/*"],
+      "@/utils/*": ["utils/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "coverage",
+    ".env*",
+    "*.md",
+    "logs"
+  ],
+  "ts-node": {
+    "esm": false,
+    "transpileOnly": true,
+    "files": true,
+    "compilerOptions": {
+      "module": "commonjs",
+      "target": "ES2020"
+    }
+  }
+}

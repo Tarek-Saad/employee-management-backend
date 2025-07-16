@@ -1,0 +1,120 @@
+{
+    "name": "employee-management-backend",
+    "version": "1.0.0",
+    "description": "Employee Management System Backend API",
+    "main": "dist/server.js",
+    "scripts": {
+        "dev": "nodemon --exec ts-node src/server.ts",
+        "dev:watch": "nodemon --watch src --ext ts --exec \"ts-node src/server.ts\"",
+        "build": "tsc",
+        "start": "node dist/server.js",
+        "start:prod": "NODE_ENV=production node dist/server.js",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test-db": "ts-node src/test-db.ts",
+        "lint": "eslint src/**/*.ts",
+        "lint:fix": "eslint src/**/*.ts --fix",
+        "clean": "rimraf dist",
+        "prebuild": "npm run clean",
+        "postbuild": "npm run copy-files",
+        "copy-files": "cpx \"src/**/*.sql\" dist/",
+        "db:setup": "psql $DATABASE_URL -f database.sql",
+        "db:test": "ts-node -e \"import('./src/lib/db').then(db => db.testConnection().then(() => process.exit(0)).catch(() => process.exit(1)))\""
+    },
+    "keywords": [
+        "employee",
+        "management",
+        "nodejs",
+        "typescript",
+        "postgresql",
+        "express",
+        "api"
+    ],
+    "author": "Employee Management Team",
+    "license": "MIT",
+    "dependencies": {
+        "compression": "^1.7.4",
+        "cors": "^2.8.5",
+        "dotenv": "^16.6.1",
+        "express": "^4.18.2",
+        "helmet": "^7.0.0",
+        "morgan": "^1.10.0",
+        "pg": "^8.11.3"
+    },
+    "devDependencies": {
+        "@types/compression": "^1.7.2",
+        "@types/cors": "^2.8.13",
+        "@types/express": "^4.17.17",
+        "@types/jest": "^29.5.3",
+        "@types/morgan": "^1.9.4",
+        "@types/node": "^20.5.0",
+        "@types/pg": "^8.10.2",
+        "@typescript-eslint/eslint-plugin": "^6.2.1",
+        "@typescript-eslint/parser": "^6.2.1",
+        "cpx": "^1.5.0",
+        "eslint": "^8.46.0",
+        "jest": "^29.6.2",
+        "nodemon": "^3.0.1",
+        "rimraf": "^5.0.1",
+        "ts-jest": "^29.1.1",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.1.6"
+    },
+    "engines": {
+        "node": ">=16.0.0",
+        "npm": ">=8.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/your-username/employee-management-backend.git"
+    },
+    "bugs": {
+        "url": "https://github.com/your-username/employee-management-backend/issues"
+    },
+    "homepage": "https://github.com/your-username/employee-management-backend#readme",
+    "nodemonConfig": {
+        "watch": [
+            "src"
+        ],
+        "ext": "ts",
+        "ignore": [
+            "src/**/*.test.ts",
+            "node_modules"
+        ],
+        "exec": "ts-node src/server.ts",
+        "env": {
+            "NODE_ENV": "development"
+        }
+    },
+    "jest": {
+        "preset": "ts-jest",
+        "testEnvironment": "node",
+        "roots": [
+            "<rootDir>/src"
+        ],
+        "testMatch": [
+            "**/__tests__/**/*.test.ts",
+            "**/?(*.)+(spec|test).ts"
+        ],
+        "collectCoverageFrom": [
+            "src/**/*.ts",
+            "!src/**/*.d.ts",
+            "!src/test-db.ts"
+        ]
+    },
+    "eslintConfig": {
+        "parser": "@typescript-eslint/parser",
+        "extends": [
+            "eslint:recommended",
+            "@typescript-eslint/recommended"
+        ],
+        "plugins": [
+            "@typescript-eslint"
+        ],
+        "rules": {
+            "@typescript-eslint/no-unused-vars": "error",
+            "@typescript-eslint/no-explicit-any": "warn",
+            "prefer-const": "error"
+        }
+    }
+}

@@ -19,7 +19,11 @@
         "postbuild": "npm run copy-files",
         "copy-files": "cpx \"src/**/*.sql\" dist/",
         "db:setup": "psql $DATABASE_URL -f database.sql",
-        "db:test": "ts-node -e \"import('./src/lib/db').then(db => db.testConnection().then(() => process.exit(0)).catch(() => process.exit(1)))\""
+        "db:test": "ts-node -e \"import('./src/lib/db').then(db => db.testConnection().then(() => process.exit(0)).catch(() => process.exit(1)))\"",
+
+        "vercel-build": "npm run build",
+        "vercel:dev": "vercel dev",
+        "vercel:deploy": "vercel --prod"
     },
     "keywords": [
         "employee",

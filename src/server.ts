@@ -8,7 +8,6 @@ import employeeRoutes from "./routes/employees";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(
@@ -19,6 +18,9 @@ app.use(
       "http://127.0.0.1:3000",
       "http://127.0.0.1:5173",
       "http://localhost:3001",
+      // إضافة Vercel domains
+      "https://*.vercel.app",
+      "https://yourdomain.com", // حط domain بتاعك هنا
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -29,45 +31,35 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Request logging middleware
+// Request logging middleware (مُبسط للـ serverless)
 app.use((req, res, next) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method} ${req.path}`);
-  if (req.method !== "GET") {
-    console.log("Body:", JSON.stringify(req.body, null, 2));
+  if (process.env.NODE_ENV !== "production") {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${req.method} ${req.path}`);
   }
   next();
 });
 
-// Response logging middleware
-app.use((req, res, next) => {
-  const originalSend = res.send;
-  res.send = function (body) {
-    if (res.statusCode >= 400) {
-      console.log(`[ERROR] ${res.statusCode} - ${req.method} ${req.path}`);
-      console.log("Response:", body);
-    }
-    return originalSend.call(this, body);
-  };
-  next();
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({
+    status: "OK",
+    message: "نظام إدارة الموظفين يعمل بشكل طبيعي",
+    timestamp: new Date().toISOString(),
+    version: "1.0.0",
+    environment: process.env.NODE_ENV || "development",
+  });
 });
 
-// Test database connection on startup
-async function testDatabaseConnection() {
+// Database test endpoint
+app.get("/api/test-db", async (req, res) => {
   try {
     console.log("🔍 Testing database connection...");
 
-    const result = await pool.query(
-      "SELECT NOW() as current_time, version() as db_version"
-    );
-    console.log("✅ Database connected successfully!");
-    console.log("⏰ Current time:", result.rows[0].current_time);
-    console.log(
-      "🗄️ Database version:",
-      result.rows[0].db_version.split(" ")[0]
-    );
+    // Basic connection test
+    const timeResult = await pool.query("SELECT NOW() as current_time");
 
-    // Test if required tables exist
+    // Check tables
     const tablesQuery = `
       SELECT table_name 
       FROM information_schema.tables 
@@ -75,100 +67,16 @@ async function testDatabaseConnection() {
       AND table_name IN ('employees', 'attendance', 'financial_transactions')
       ORDER BY table_name
     `;
-
-    const tablesResult = await pool.query(tablesQuery);
-    const existingTables = tablesResult.rows.map((row) => row.table_name);
-
-    console.log("📊 Available tables:", existingTables);
-
-    const requiredTables = [
-      "employees",
-      "attendance",
-      "financial_transactions",
-    ];
-    const missingTables = requiredTables.filter(
-      (table) => !existingTables.includes(table)
-    );
-
-    if (missingTables.length > 0) {
-      console.warn("⚠️ Missing tables:", missingTables);
-      console.warn("Please run the database setup SQL script first.");
-    }
-
-    // Test employee count if employees table exists
-    if (existingTables.includes("employees")) {
-      try {
-        const countQuery =
-          "SELECT COUNT(*) as employee_count FROM employees WHERE is_active = true";
-        const countResult = await pool.query(countQuery);
-        console.log("👥 Active employees:", countResult.rows[0].employee_count);
-      } catch (error) {
-        console.warn("⚠️ Could not count employees:", error.message);
-      }
-    }
-
-    return true;
-  } catch (error) {
-    console.error("❌ Database connection failed:", error.message);
-    console.error(
-      "💡 Make sure your database is running and the connection string is correct."
-    );
-    return false;
-  }
-}
-
-// Routes
-
-// Health check endpoint
-app.get("/health", async (req, res) => {
-  try {
-    const dbResult = await pool.query("SELECT NOW() as db_time");
-    res.json({
-      status: "OK",
-      message: "Employee Management API is running",
-      timestamp: new Date().toISOString(),
-      database: "Connected",
-      server_time: new Date().toISOString(),
-      db_time: dbResult.rows[0].db_time,
-      version: "1.0.0",
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: "ERROR",
-      message: "Database connection failed",
-      timestamp: new Date().toISOString(),
-      error: error.message,
-    });
-  }
-});
-
-// Database test endpoint
-app.get("/api/test-db", async (req, res) => {
-  try {
-    console.log("🧪 Running database test...");
-
-    // Basic connection test
-    const timeResult = await pool.query("SELECT NOW() as current_time");
-
-    // Check tables
-    const tablesQuery = `
-      SELECT table_name, 
-             (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = t.table_name) as column_count
-      FROM information_schema.tables t
-      WHERE table_schema = 'public' 
-      AND table_name IN ('employees', 'attendance', 'financial_transactions')
-      ORDER BY table_name
-    `;
     const tablesResult = await pool.query(tablesQuery);
 
-    // Check employee data
-    let employeeStats = null;
+    // Employee stats (optional)
+    let employeeStats = {};
     try {
       const statsQuery = `
         SELECT 
           COUNT(*) as total_employees,
-          COUNT(CASE WHEN is_active = true THEN 1 END) as active_employees,
-          COUNT(CASE WHEN is_active = false THEN 1 END) as inactive_employees
+          COUNT(CASE WHEN payment_status = 'settled' THEN 1 END) as settled_employees,
+          COUNT(CASE WHEN payment_status = 'pending' THEN 1 END) as pending_employees
         FROM employees
       `;
       const statsResult = await pool.query(statsQuery);
@@ -285,78 +193,9 @@ app.use("*", (req, res) => {
   });
 });
 
-// Start server function
-async function startServer() {
-  try {
-    console.log("🚀 Starting Employee Management Server...");
+// ============================================
+// تم إزالة منطق بدء الخادم للـ Serverless
+// ============================================
 
-    // Test database connection first
-    const dbConnected = await testDatabaseConnection();
-
-    if (!dbConnected) {
-      console.warn("⚠️ Starting server despite database connection issues...");
-    }
-
-    const server = app.listen(PORT, () => {
-      console.log("=".repeat(50));
-      console.log("🎉 Server is running successfully!");
-      console.log("=".repeat(50));
-      console.log(`📍 Server URL: http://localhost:${PORT}`);
-      console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
-      console.log(`🧪 Database Test: http://localhost:${PORT}/api/test-db`);
-      console.log(`👥 Employees API: http://localhost:${PORT}/api/employees`);
-      console.log("=".repeat(50));
-      console.log("📝 Server logs:");
-    });
-
-    return server;
-  } catch (error) {
-    console.error("❌ Failed to start server:", error);
-    process.exit(1);
-  }
-}
-
-// Graceful shutdown handling
-process.on("SIGINT", async () => {
-  console.log("\n🛑 Received SIGINT. Shutting down gracefully...");
-  try {
-    await pool.end();
-    console.log("✅ Database connection closed.");
-    console.log("👋 Server stopped. Goodbye!");
-    process.exit(0);
-  } catch (error) {
-    console.error("❌ Error during shutdown:", error);
-    process.exit(1);
-  }
-});
-
-process.on("SIGTERM", async () => {
-  console.log("\n🛑 Received SIGTERM. Shutting down gracefully...");
-  try {
-    await pool.end();
-    console.log("✅ Database connection closed.");
-    console.log("👋 Server stopped. Goodbye!");
-    process.exit(0);
-  } catch (error) {
-    console.error("❌ Error during shutdown:", error);
-    process.exit(1);
-  }
-});
-
-// Handle uncaught exceptions
-process.on("uncaughtException", (error) => {
-  console.error("💥 Uncaught Exception:", error);
-  process.exit(1);
-});
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("💥 Unhandled Rejection at:", promise, "reason:", reason);
-  process.exit(1);
-});
-
-// Start the server if this file is run directly
-if (require.main === module) {
-  startServer();
-}
-
+// Export the Express app for Vercel
 export default app;

@@ -361,3 +361,4 @@ docker-compose.override.yml
 docker-compose.local.yml
 
 # End of file   
+.vercel

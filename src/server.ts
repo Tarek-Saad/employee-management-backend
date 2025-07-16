@@ -197,5 +197,8 @@ app.use("*", (req, res) => {
 // تم إزالة منطق بدء الخادم للـ Serverless
 // ============================================
 
-// Export the Express app for Vercel
+// Export the Express app for Vercel (must be default export)
 export default app;
+
+// Keep this for local development
+export { app };
